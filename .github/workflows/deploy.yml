@@ -9,23 +9,62 @@ permissions:
   pages: write
   id-token: write
 
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Unzip project
+      - name: Ensure unzip + extract project
         run: |
           sudo apt-get update && sudo apt-get install -y unzip
-          unzip -o soap-calc-pro-starter.zip
+          ZIP="soap-calc-pro-starter.zip"
+          test -f "$ZIP" || { echo "::error title=ZIP missing::File $ZIP not found in repo root"; exit 1; }
+          unzip -o "$ZIP" -d .
+
+      - name: Sanity check
+        run: |
+          ls -la
+          test -f package.json || { echo "::error title=package.json missing::Unzip did not create package.json"; exit 1; }
+          test -d src || { echo "::error title=src/ missing::Unzip did not create src/"; exit 1; }
+
+      # Fix the common causes of blank page / build failure
+      - name: Patch build script + paths
+        run: |
+          # 1) Remove 'tsc -b' (causes exit 1 on simple setups)
+          node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json','utf8'));p.scripts.build='vite build';fs.writeFileSync('package.json',JSON.stringify(p,null,2));console.log(p.scripts)"
+          # 2) Manifest path uses BASE_URL
+          sed -i 's|href="/manifest.webmanifest"|href="%BASE_URL%manifest.webmanifest"|' index.html || true
+          # 3) Icons must be relative (not /icons/)
+          if [ -f public/manifest.webmanifest ]; then sed -i 's|/icons/|icons/|g' public/manifest.webmanifest || true; fi
+          # 4) SW registration must respect repo base
+          mkdir -p src/pwa
+          cat > src/pwa/registerSW.ts <<'EOF'
+          export function registerSW() {
+            if ('serviceWorker' in navigator) {
+              window.addEventListener('load', () => {
+                const url = `${import.meta.env.BASE_URL}sw.js`;
+                navigator.serviceWorker.register(url).catch(console.error);
+              });
+            }
+          }
+          EOF
 
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
 
-      - run: npm install --no-audit --no-fund
-      - run: npm run build -- --base=/belleis-soap-calculator/
+      - name: Install deps
+        run: npm install --no-audit --no-fund
+
+      - name: Build (with correct base)
+        run: npm run build -- --base=/belleis-soap-calculator/
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
