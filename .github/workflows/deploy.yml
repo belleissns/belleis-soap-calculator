@@ -15,29 +15,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: List files (before unzip)
-        run: ls -la
-
-      - name: Ensure unzip + extract
+      - name: Unzip project
         run: |
           sudo apt-get update && sudo apt-get install -y unzip
-          # 👇 If your ZIP has a different name, change it here
           unzip -o soap-calc-pro-starter.zip
-
-      - name: List files (after unzip)
-        run: |
-          ls -la
-          echo "----"
-          find . -maxdepth 2 -type d -print
 
       - uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Install deps
-        run: npm install --no-audit --no-fund
+      - run: npm install --no-audit --no-fund
+      - run: npm run build -- --base=/belleis-soap-calculator/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
 
-      # Patch asset paths so GitHub Pages serves correctly under /belleis-soap-calculator/
-      - name: Patch base paths
-        run: |
-          sed -i
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
