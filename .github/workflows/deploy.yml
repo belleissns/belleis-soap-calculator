@@ -15,7 +15,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Unzip the starter
+      # Unzip the starter that you uploaded to the repo root
+      - name: Unzip starter
         run: |
           sudo apt-get update && sudo apt-get install -y unzip
           unzip -o soap-calc-pro-starter.zip
@@ -24,8 +25,8 @@ jobs:
         with:
           node-version: 18
 
-      - run: npm ci
-      # Force the correct base path for GitHub Pages
+      - run: npm install
+      # IMPORTANT: set base to your repo name so assets load under /belleis-soap-calculator/
       - run: npm run build -- --base=/belleis-soap-calculator/
 
       - uses: actions/upload-pages-artifact@v3
