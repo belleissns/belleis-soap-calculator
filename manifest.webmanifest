@@ -1,12 +1,9 @@
 {
-  "name": "Lye, Dye, and DIY — Bel Lei’s Soap Calculator",
-  "short_name": "SoapCalc",
+  "name": "Bel Lei's Lye, Dye, and DIY Soap Calculator",
+  "short_name": "Bel Lei's SoapCalc",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#fff8f8",
-  "theme_color": "#98273B",
-  "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
-  ]
+  "background_color": "#fffaf0",
+  "theme_color": "#6f42c1",
+  "description": "Soap formulation calculator and maker reference by Bel Lei's Soaps 'N Stuffs."
 }
